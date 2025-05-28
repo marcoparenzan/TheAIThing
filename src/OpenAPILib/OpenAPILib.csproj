@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="Microsoft.OpenApi" Version="2.0.0-preview9" />
+		<PackageReference Include="Microsoft.OpenApi.Readers" Version="2.0.0-preview9" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <ProjectReference Include="..\ToolsLib\ToolsLib.csproj" />
+	</ItemGroup>
+
+</Project>
