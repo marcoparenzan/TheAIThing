@@ -54,7 +54,9 @@ public class MqttClientService([ServiceKey] string serviceKey, IConfiguration co
             .WithTcpServer(host, port)
             .WithClientId(clientId)
             .WithCredentials(username, password)
-            .WithTimeout(TimeSpan.FromSeconds(60));
+            .WithTimeout(TimeSpan.FromSeconds(60))
+            .WithWillRetain(true)    
+        ;
 
         //var pemKey = X509Certificate2.CreateFromPemFile(
         //    serviceConfig["certificate:pem"],

@@ -1,24 +1,26 @@
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 using System.ComponentModel;
+using System.Text.Encodings.Web;
 using TheAIThingAPI.Components;
 using TheAIThingAPI.Services;
-using UnifiedNamespaceLib.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHybridCache();
 builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IRetainedMessageService, UnifiedNamespaceLib.Services.InMemoryRetainedMessageService>("retain0");
-builder.Services.AddKeyedTransient<UnifiedNamespaceLib.Services.IWorkerService, TheAIThingAPI.Services.OpcUAService>("opcua1");
-builder.Services.AddKeyedTransient<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.MqttBrokerService>("mqttbroker");
-builder.Services.AddKeyedTransient<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.TimerServices>("timers");
-builder.Services.AddKeyedTransient<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.TimeSeriesService>("timeseries");
-builder.Services.AddKeyedTransient<UnifiedNamespaceLib.Services.IMessagingService, UnifiedNamespaceLib.Services.MqttClientService>("mqttclient-opcua1");
-builder.Services.AddKeyedTransient<UnifiedNamespaceLib.Services.IMessagingService, UnifiedNamespaceLib.Services.MqttClientService>("mqttclient-timers");
-builder.Services.AddKeyedTransient<UnifiedNamespaceLib.Services.IMessagingService, UnifiedNamespaceLib.Services.MqttClientService>("mqttclient-timeseries");
+builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.OpcUAService>("opcua1");
+builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.MqttBrokerService>("mqttbroker");
+builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.TimerServices>("timers");
+builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.TimeSeriesService>("timeseries");
+builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.CacheService>("cache");
+builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IMessagingService, UnifiedNamespaceLib.Services.MqttClientService>("mqttclient-opcua1");
+builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IMessagingService, UnifiedNamespaceLib.Services.MqttClientService>("mqttclient-timers");
+builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IMessagingService, UnifiedNamespaceLib.Services.MqttClientService>("mqttclient-timeseries");
+builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IMessagingService, UnifiedNamespaceLib.Services.MqttClientService>("mqttclient-cache");
 builder.Services.AddSingleton<ToolsLib.HttpHandler>();
+builder.Services.AddSingleton<FunctionsService>();
 
-builder.Services.AddHostedService<WorkerServicesManager>();
+builder.Services.AddHostedService<UnifiedNamespaceLib.Services.Workers.WorkerServicesManager>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -58,20 +60,16 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-var retainService = app.Services.GetKeyedService<IRetainedMessageService>("retain0");
+var retainService = app.Services.GetKeyedService<UnifiedNamespaceLib.Services.IRetainedMessageService>("retain0");
 
 var v1 = app.MapGroup("/api/v1")
     .WithOpenApi()
     .WithSummary("API v1 endpoints")
     .WithDescription("This group contains API v1 endpoints for various services.");
 
-v1.MapGet("oraesatta", () => DateTimeOffset.Now)
+v1.MapGet("now", () => DateTimeOffset.Now)
     .WithSummary("Current time endpoint")
     .WithDescription("Returns the current server timestamp");
-
-v1.MapGet("elencodevices", () => new string[] { "a", "b" })
-    .WithSummary("ElencoDevices")
-    .WithDescription("Ritorna la lista dei dispositivi");
 
 v1.MapGet("cercacontenuti", async (
     [FromServices] ToolsLib.HttpHandler httpHandler,
@@ -85,6 +83,16 @@ v1.MapGet("cercacontenuti", async (
 .WithSummary("Cerca contenuti")
 .WithDescription("Cerca contenuti nel web specificando un url");
 ;
+v1.MapGet("elencodevices", async ([FromServices] FunctionsService service) => await service.ElencoDevicesAsync())
+    .WithSummary("ElencoDevices")
+    .WithDescription("Ritorna la lista dei dispositivi");
 
+v1.MapGet("valoredevice/{what}", async ([FromServices] FunctionsService service, [Description("DeviceId")] string what) =>
+    { 
+        var decodedDeviceId = Uri.UnescapeDataString(what); 
+        return await service.ValoreDevice(decodedDeviceId); 
+    })
+    .WithSummary("Valore del device")
+    .WithDescription("Ritorna il valore corrente del device");
 
 app.Run();

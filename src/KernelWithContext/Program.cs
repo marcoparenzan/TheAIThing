@@ -33,13 +33,13 @@ builder.Services.AddKeyedTransient("MyKernel", (sp, key) =>
     var openApiContext = sp.GetService<OpenApiContext>();
     var res = openApiContext.GetAsync("https://localhost:7176/openapi/v1.json").Result; // Adjust URL as needed
     var functions = new List<Functions>();
-    res.Parse(info =>
+    res.Parse((url, pathKey, pathItem, operationType, operationInfo) =>
     {
-        var f = new Functions(httpHandler, info.uri); functions.Add(f);
-        var kf = KernelFunctionFactory.CreateFromMethod(f.ExecuteAsync, info.name, info.description);
+        var f = new Functions(httpHandler, url, pathKey, pathItem, operationType, operationInfo); functions.Add(f);
+        var kf = KernelFunctionFactory.CreateFromMethod(f.ExecuteAsync, pathKey.Replace('/', '_').Replace('{', '_').Replace('}', '_'), operationInfo.Description);
 
         list.Add(kf);
-        Console.WriteLine($"Added function: {info.uri}");
+        Console.WriteLine($"Added function: {url}/{pathKey}");
     });
   
     var kp = k.ImportPluginFromFunctions("Domotica", "Tutte le funzioni domotiche", list);

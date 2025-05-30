@@ -4,17 +4,35 @@ namespace KernelPlayground;
 
 public class Functions(HttpHandler httpHandler)
 {
-    public string[] ElencoDelleStanze() =>
-        ["livingroom", "kitchen", "bedroom"];
+    Dictionary<string, bool> statoCondizionamento = new();
+
+    public string[] StanzeDiUnaCasa() =>
+        ["living room", "kitchen", "bedroom"];
 
     public string[] LuciAcceseNellaStanza(string room) =>
         room switch
         {
-            "living room" => new[] { "lampadaA", "lampadarioE" },
-            "kitchner" => new[] { "lampadaB", "lampadarioF" },
+            "livingroom" => new[] { "lampadaA", "lampadarioE" },
+            "kitchen" => new[] { "lampadaB", "lampadarioF" },
             "bedroom" => new[] { "lampadaC", "lampadarioG" },
             _ => Array.Empty<string>()
         };
+
+    public bool CondizionatoreAcceso(string stanza)
+    {
+        if (!statoCondizionamento.ContainsKey(stanza))
+        {
+            statoCondizionamento[stanza] = false; // Assume the door is open by default
+        }
+        return statoCondizionamento[stanza];
+    }
+
+    public bool ToggleCondizionamento(string room)
+    {
+        var stato = CondizionatoreAcceso(room);
+        statoCondizionamento[room] = !stato; // Toggle the state
+        return !stato; // Return the new state
+    }
 
     public async Task<object> Riassumi(string diQualcosa)
     {
@@ -36,8 +54,14 @@ public class Functions(HttpHandler httpHandler)
         return null;
     }
 
-    public async Task<object> CercaInHttp(string what)
+    public async Task<object> CercaInHttp(string url)
     {
-        return httpHandler.GetAsync(what);
+        var result = await httpHandler.CercaInHttpAsync(url);
+        return result;
+    }
+
+    public async Task<object> InviaViaEMail(string cosa, string email)
+    {
+        return default;
     }
 }

@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
 		<Nullable>enable</Nullable>
@@ -11,24 +10,21 @@
 		<InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.AspNetCore.Http.Validation.Generated</InterceptorsNamespaces>
 	</PropertyGroup>
 
-
 	<ItemGroup>
 	  <None Remove="cert.pkcs12" />
 	</ItemGroup>
 
 
 	<ItemGroup>
-		<PackageReference Include="HtmlAgilityPack" Version="1.12.1" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0-preview.4.25258.110" />
 		<!--<PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.0-preview.4.25258.110">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>-->
-		<PackageReference Include="Scalar.AspNetCore" Version="2.4.3" />
+		<PackageReference Include="Scalar.AspNetCore" Version="2.4.4" />
 	</ItemGroup>
 
-	<ItemGroup>
-    <ProjectReference Include="..\OpcUaLib\OpcUaLib.csproj" />
+<ItemGroup>
     <ProjectReference Include="..\ToolsLib\ToolsLib.csproj" />
     <ProjectReference Include="..\UnifiedNamespaceLib\UnifiedNamespaceLib.csproj" />
   </ItemGroup>

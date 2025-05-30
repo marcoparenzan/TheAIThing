@@ -3,34 +3,29 @@ using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 using UnifiedNamespaceLib.Models;
 
 namespace UnifiedNamespaceLib.Services;
 
-public class InMemoryRetainedMessageService : IRetainedMessageService
+public class InMemoryRetainedMessageService([ServiceKey] string serviceKey, IConfiguration config, IServiceProvider sp, ILogger<InMemoryRetainedMessageService> logger) : IRetainedMessageService
 {
-    private Models.Database.ValueType[] valueTypes;
-    private Models.Database.ValueType jsonValueType;
-    private HybridCache hybridCache;
+    private Dictionary<string, object> cache = new();
 
-    public InMemoryRetainedMessageService(IConfiguration config, IServiceProvider sp, ILogger<EFRetainedMessageService> logger)
-    {
-        this.jsonValueType = new Models.Database.ValueType
-        {
-            Id = 1,
-            Name = "Json"
-        };
-        this.valueTypes = [jsonValueType];
-        this.hybridCache = sp.GetService<HybridCache>();
-    }
-
-    public async Task AddAsync(MqttRetainedMessageModel value)
+    public async Task AddAsync(string key, object value)
     {
         var ts = DateTimeOffset.Now;
 
         try
         {
-            await hybridCache.SetAsync(value.Topic, value);
+            if (cache.ContainsKey(key))
+            {
+                cache[key] = value;
+            }
+            else
+            {
+                cache.Add(key, value);
+            }
         }
         catch (Exception ex)
         {
@@ -38,22 +33,25 @@ public class InMemoryRetainedMessageService : IRetainedMessageService
         }
     }
 
-    public async Task<MqttRetainedMessageModel[]> GetAsync(params string[] keys)
+    public async Task<Dictionary<string, object>> GetAsync(params string[] keys)
     {
-        var items = new List<MqttRetainedMessageModel>();
+        var items = new Dictionary<string, object>();
 
         foreach (var key in keys)
         {
-            var item = await hybridCache.GetOrCreateAsync<MqttRetainedMessageModel>(key, async ct =>
-            {
-                return default;
-            });
+            
+            var item = cache[key];
             if (item is not null)
             {
-                items.Add(item);
+                items.Add(key, item);
             }
         }
 
-        return items.ToArray();
+        return items;
+    }
+
+    public async Task<string[]> GetKeysAsync()
+    {
+        return cache.Keys.ToArray();
     }
 }

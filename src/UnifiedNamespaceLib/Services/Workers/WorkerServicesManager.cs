@@ -1,6 +1,9 @@
-﻿using UnifiedNamespaceLib.Services;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace TheAIThingAPI.Services;
+namespace UnifiedNamespaceLib.Services.Workers;
 
 public class WorkerServicesManager(IConfiguration config, IServiceProvider sp, ILogger<WorkerServicesManager> logger) : BackgroundService
 {

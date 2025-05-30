@@ -1,4 +1,5 @@
 ﻿using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Reader;
 using System.Collections.Generic;
 using ToolsLib;
@@ -27,8 +28,10 @@ public class OpenApiContextResult
 {
     internal OpenApiDocument openApiDocument;
 
-    public void Parse(Action<(string uri, string name, string description)> handler)
+    public void Parse(Action<string, string, IOpenApiPathItem, OperationType, OpenApiOperation> handler)
     {
+        var url = openApiDocument.Servers[0].Url.TrimEnd('/');
+
         foreach (var path in openApiDocument.Paths)
         {
             var pathEntry = path.Key;
@@ -36,11 +39,7 @@ public class OpenApiContextResult
             if (pathItem.Operations.Count == 0) continue;
             foreach (var operation in pathItem.Operations)
             {
-                var method = operation.Key.ToString().ToUpperInvariant();
-                var operationId = operation.Value.OperationId ?? $"{method}_{pathEntry.Replace("/", "_")}";
-                var description = operation.Value.Description ?? "No description provided.";
-
-                handler(($"{openApiDocument.Servers[0].Url.TrimEnd('/')}{pathEntry}", operationId, description));
+                handler(url, path.Key, path.Value, operation.Key, operation.Value);
             }
         }
     }

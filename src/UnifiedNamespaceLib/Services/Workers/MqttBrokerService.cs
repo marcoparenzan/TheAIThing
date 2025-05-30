@@ -56,22 +56,22 @@ public class MqttBrokerService([ServiceKey] string serviceKey, IConfiguration co
             e.ReasonCode = MqttConnectReasonCode.Success;
         };
 
-        // Make sure that the server will load the retained messages.
-        server.LoadingRetainedMessageAsync += async eventArgs =>
-        {
-            //var messages = await retain.GetAsync();
-            //eventArgs.LoadedRetainedMessages = messages.Select(xx => xx.ToApplicationMessage()).ToList();
-        };
+        //// Make sure that the server will load the retained messages.
+        //server.LoadingRetainedMessageAsync += async eventArgs =>
+        //{
+        //    var messages = await retain.GetAsync();
+        //    eventArgs.LoadedRetainedMessages = messages.Select(xx => xx.ToApplicationMessage()).ToList();
+        //};
 
-        // Make sure to persist the changed retained messages.
-        server.RetainedMessageChangedAsync += async eventArgs =>
-        {
-            await retain.AddAsync(MqttRetainedMessageModel.Create(eventArgs.ChangedRetainedMessage));
-        };
+        //// Make sure to persist the changed retained messages.
+        //server.RetainedMessageChangedAsync += async eventArgs =>
+        //{
+        //    await retain.AddAsync(MqttRetainedMessageModel.Create(eventArgs.ChangedRetainedMessage));
+        //};
 
-        server.RetainedMessagesClearedAsync += async (a) =>
-        {
-        };
+        //server.RetainedMessagesClearedAsync += async (a) =>
+        //{
+        //};
 
         await server.StartAsync();
     }

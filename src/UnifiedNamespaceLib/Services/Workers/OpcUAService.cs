@@ -1,11 +1,14 @@
-﻿using MQTTnet;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using MQTTnet;
 using Opc.Ua;
 using OpcUaLib;
 using Org.BouncyCastle.Crypto;
 using System.Text.Json;
 using UnifiedNamespaceLib.Services;
 
-namespace TheAIThingAPI.Services;
+namespace UnifiedNamespaceLib.Services.Workers;
 
 public class OpcUAService([ServiceKey] string serviceKey, IConfiguration config, IServiceProvider sp, ILogger<OpcUaClient> logger) : IWorkerService
 {
