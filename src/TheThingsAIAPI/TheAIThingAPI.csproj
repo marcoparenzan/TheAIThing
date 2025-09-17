@@ -16,12 +16,12 @@
 
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0-preview.4.25258.110" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0-rc.1.25451.107" />
 		<!--<PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.0-preview.4.25258.110">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>-->
-		<PackageReference Include="Scalar.AspNetCore" Version="2.4.4" />
+		<PackageReference Include="Scalar.AspNetCore" Version="2.8.4" />
 	</ItemGroup>
 
 <ItemGroup>

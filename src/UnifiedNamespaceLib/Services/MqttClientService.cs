@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MQTTnet;
 using MQTTnet.Packets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 
 namespace UnifiedNamespaceLib.Services;
@@ -15,6 +16,7 @@ public class MqttClientService([ServiceKey] string serviceKey, IConfiguration co
 
     List<Action<MqttApplicationMessage>> handlers = new();
     List<MqttTopicFilter> topicFilters;
+    private MqttClientOptions mqttClientOptions;
 
     public async Task<MqttClientService> ConnectAsync()
     {
@@ -41,38 +43,42 @@ public class MqttClientService([ServiceKey] string serviceKey, IConfiguration co
         var credentialConfig = config.GetSection(credentialsName);
         if (string.IsNullOrWhiteSpace(credentialsName)) credentialConfig = serviceConfig.GetSection("credentials");
 
-        EnsureMqttClient();
+        this.mqttFactory = new MqttClientFactory();
+        this.mqttClient = mqttFactory.CreateMqttClient();
 
-        var username = credentialConfig["username"];
-        var password = credentialConfig["password"];
-        this.clientId = (serviceConfig["clientId"] ?? serviceKey) ?? username;
-        var host = credentialConfig["host"];
+        this.clientId = credentialConfig["ClientId"] ?? serviceKey;
+        var username = credentialConfig["Username"] ?? clientId;
+        var password = credentialConfig["Password"] ?? "";
+        var host = credentialConfig["HostName"];
         var port = 1883;
-        int.TryParse(credentialConfig["port"], out port);
+        int.TryParse(credentialConfig["Port"], out port);
 
         var mqttClientOptionsBuilder = new MqttClientOptionsBuilder()
             .WithTcpServer(host, port)
             .WithClientId(clientId)
             .WithCredentials(username, password)
             .WithTimeout(TimeSpan.FromSeconds(60))
-            .WithWillRetain(true)    
+        //.WithWillRetain(true)
         ;
 
-        //var pemKey = X509Certificate2.CreateFromPemFile(
-        //    serviceConfig["certificate:pem"],
-        //    serviceConfig["certificate:key"]
-        //);
-        //var pkcs12 = pemKey.Export(X509ContentType.Pkcs12);
-        //var certificate = new X509Certificate2(pkcs12);
+        var certificateUrl = credentialConfig["CertificateUrl"];
 
-        //mqttClientOptionsBuilder = mqttClientOptionsBuilder
-        //    .WithTlsOptions(configure =>
-        //        configure
-        //            .UseTls()
-        //            .WithClientCertificates([certificate])
-        //);
-        var mqttClientOptions = mqttClientOptionsBuilder.Build();
+        if (!string.IsNullOrWhiteSpace(certificateUrl))
+        {
+            var certificatePassword = credentialConfig["CertificatePassword"];
 
+            var httpClient = new HttpClient();
+            var certificateBytes = await httpClient.GetByteArrayAsync(certificateUrl);
+            var certificate = X509CertificateLoader.LoadPkcs12(certificateBytes, certificatePassword);
+
+            mqttClientOptionsBuilder = mqttClientOptionsBuilder.WithTlsOptions(configure =>
+                configure
+                    .UseTls()
+                    .WithClientCertificates([certificate])
+            );
+        }
+
+        this.mqttClientOptions = mqttClientOptionsBuilder.Build();
 
         mqttClient.DisconnectedAsync += async (s) =>
         {
@@ -95,19 +101,9 @@ public class MqttClientService([ServiceKey] string serviceKey, IConfiguration co
             return Task.CompletedTask;
         };
 
-
         var connectResponse = await mqttClient.ConnectAsync(mqttClientOptions, CancellationToken.None);
 
         return this;
-    }
-
-    private void EnsureMqttClient()
-    {
-        if (mqttClient is null)
-        {
-            this.mqttFactory = new MqttClientFactory();
-            this.mqttClient = mqttFactory.CreateMqttClient();
-        }
     }
 
     async Task<MqttClientService> DisconnectAsync()
@@ -124,7 +120,11 @@ public class MqttClientService([ServiceKey] string serviceKey, IConfiguration co
     public async Task<MqttClientService> PublishAsync<TPayload>(string topic, TPayload payload, bool retainFlag = true)
     {
         if (mqttClient is null) throw new InvalidOperationException("mqttClient is null");
-        if (!mqttClient.IsConnected) throw new InvalidOperationException("!mqttClient.IsConnected");
+        if (!mqttClient.IsConnected)
+        {
+            await mqttClient.ReconnectAsync(CancellationToken.None);
+            //throw new InvalidOperationException("!mqttClient.IsConnected");
+        }
 
         try
         {
@@ -152,8 +152,6 @@ public class MqttClientService([ServiceKey] string serviceKey, IConfiguration co
 
     public async Task<MqttClientService> SubscribeAsync(params string[] topics)
     {
-        EnsureMqttClient();
-            
         if (topicFilters is not null)
         {
             await mqttClient.UnsubscribeAsync(new MqttClientUnsubscribeOptions

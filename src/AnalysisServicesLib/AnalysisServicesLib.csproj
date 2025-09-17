@@ -6,8 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="HtmlAgilityPack" Version="1.12.3" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AnalysisServices" Version="19.104.1" />
+    <PackageReference Include="Microsoft.AnalysisServices.AdomdClient" Version="19.104.1" />
+  </ItemGroup>
 
 </Project>

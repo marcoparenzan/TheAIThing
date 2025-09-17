@@ -10,6 +10,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AIAppLib\AIAppLib.csproj" />
+    <ProjectReference Include="..\AnalysisServicesLib\AnalysisServicesLib.csproj" />
+    <ProjectReference Include="..\FabricLib\FabricLib.csproj" />
+    <ProjectReference Include="..\PowerBIEmbeddingLib\PowerBIEmbeddingLib.csproj" />
     <ProjectReference Include="..\ToolsLib\ToolsLib.csproj" />
   </ItemGroup>
 </Project>
