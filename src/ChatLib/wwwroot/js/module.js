@@ -12,7 +12,6 @@ export function setup(moduleId, proxy, canv, staticPath) {
 }
 
 export function start(moduleId) {
-    // Optional: hook for future initialization
     window.powerBiEmbeddingLib = window.powerBiEmbeddingLib || {};
     const that = window.powerBiEmbeddingLib[moduleId];
     if (!that || !that.component) return;
@@ -73,8 +72,6 @@ class ChatInterface {
         this.sendButton = sendButton;
         this.actionsList = actionsList;
         this.messageCounter = 0;
-        // Find the scrollable viewport to auto-scroll properly
-        this.scroller = this.chatContainer.closest('.chat-messages') || this.chatContainer;
 
         this.initEventListeners();
     }
@@ -100,7 +97,6 @@ class ChatInterface {
         setTimeout(() => {
             this.addMessage('This is a simulated AI response to your message.', 'ai');
             this.addAction(`Download Response ${++this.messageCounter}`, 'download');
-            this.messageInput.focus();
         }, 500);
     }
 
@@ -110,28 +106,39 @@ class ChatInterface {
 
         const bubble = document.createElement('div');
         bubble.className = `chat-bubble ${sender}`;
-        bubble.innerHTML = content;
+        bubble.textContent = content;
 
         row.appendChild(bubble);
         this.chatContainer.appendChild(row);
 
-        const scroller = this.scroller || this.chatContainer;
-        scroller.scrollTop = scroller.scrollHeight;
+        // Scroll to bottom
+        const messagesContainer = this.chatContainer.closest('.chat-messages');
+        if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
     }
 
     addAction(title, type) {
         const actionDiv = document.createElement('div');
         actionDiv.className = 'action-item';
 
-        actionDiv.innerHTML = `
+        const iconHtml = `
             <div class="action-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 10v6m0 0l-3-3m3 3l3-3M5 12h14"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
             </div>
-            <span class="action-title">${title}</span>
         `;
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'action-title';
+        titleSpan.textContent = title;
+
+        actionDiv.innerHTML = iconHtml;
+        actionDiv.appendChild(titleSpan);
 
         actionDiv.addEventListener('click', () => {
             alert(`Action: ${title}`);

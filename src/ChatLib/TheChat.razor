@@ -2,39 +2,276 @@
 @using MudBlazor
 @inject ChatJsInterop interop
 
-<!-- Add inline flex + fixed sidebar width so it stays on the side even if CSS isn't loaded -->
-<div @ref="el" class="chat-root" style="display:flex;width:100%;height:100%;min-height:0;">
+<style>
+    /* Ensure host element takes full height */
+    :host {
+        display: block;
+        height: 90vh;
+    }
+
+    /* Layout */
+    .chat-root {
+        display: flex;
+        width: 100%;
+        height: 90vh;
+        min-height: 0;
+        background: #1e1e2e;
+        color: #ffffff;
+        position: relative;
+    }
+
+    .chat-main {
+        flex: 0 0 80%;
+        width: 80%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .chat-main-header {
+        flex: 0 0 auto;
+        padding: 20px;
+        border-bottom: 1px solid #3a3a4a;
+        background: #27273a;
+    }
+
+        .chat-main-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+            color: #ffffff;
+        }
+
+    .chat-messages {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 20px;
+        padding-bottom: 90px; /* Space for input */
+        position: relative;
+        min-height: 0;
+    }
+
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* Message rows and bubbles */
+    .chat-row {
+        display: flex;
+        width: 100%;
+    }
+
+        .chat-row.user {
+            justify-content: flex-end;
+        }
+
+        .chat-row.ai {
+            justify-content: flex-start;
+        }
+
+    .chat-bubble {
+        max-width: 70%;
+        padding: 12px 16px;
+        border-radius: 18px;
+        font-size: 14px;
+        line-height: 1.4;
+        word-wrap: break-word;
+    }
+
+        .chat-bubble.user {
+            background: #7c3aed;
+            color: #ffffff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.ai {
+            background: #2a2a3e;
+            color: #e0e0e0;
+            border-bottom-left-radius: 4px;
+        }
+
+    /* Input area - absolutely positioned */
+    .chat-input {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #27273a;
+        border-top: 1px solid #3a3a4a;
+        padding: 16px;
+        z-index: 10;
+    }
+
+    .chat-input-inner {
+        display: flex;
+        gap: 12px;
+        max-width: 100%;
+    }
+
+    .chat-input-field {
+        flex: 1;
+        padding: 12px 16px;
+        background: #1e1e2e;
+        border: 1px solid #3a3a4a;
+        border-radius: 8px;
+        color: #ffffff;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+        .chat-input-field:focus {
+            border-color: #7c3aed;
+        }
+
+    .chat-send-button {
+        padding: 12px 24px;
+        background: #7c3aed;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .chat-send-button:hover {
+            background: #6d28d9;
+        }
+
+    /* Sidebar */
+    .chat-sidebar {
+        flex: 0 0 20%;
+        width: 20%;
+        background: #27273a;
+        border-left: 1px solid #3a3a4a;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .chat-sidebar-header {
+        flex: 0 0 auto;
+        padding: 20px;
+        border-bottom: 1px solid #3a3a4a;
+    }
+
+        .chat-sidebar-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+            color: #ffffff;
+        }
+
+    .chat-actions {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
+    }
+
+    /* Action items */
+    .action-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #1e1e2e;
+        border: 1px solid #3a3a4a;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .action-item:hover {
+            background: #2a2a3e;
+            border-color: #7c3aed;
+        }
+
+    .action-icon {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #27273a;
+        border-radius: 6px;
+    }
+
+        .action-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: #7c3aed;
+        }
+
+    .action-title {
+        flex: 1;
+        font-size: 14px;
+        color: #e0e0e0;
+    }
+
+    /* Scrollbar styling */
+    .chat-messages::-webkit-scrollbar,
+    .chat-actions::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track,
+    .chat-actions::-webkit-scrollbar-track {
+        background: #1e1e2e;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb,
+    .chat-actions::-webkit-scrollbar-thumb {
+        background: #3a3a4a;
+        border-radius: 4px;
+    }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover,
+        .chat-actions::-webkit-scrollbar-thumb:hover {
+            background: #4a4a5a;
+        }
+</style>
+
+<div @ref="el" class="chat-root">
     <!-- Main Chat Area -->
-    <MudPaper Elevation="0" Class="chat-main" style="position:relative;flex:1 1 auto;min-width:0;min-height:0;--chat-input-height:72px;">
-        <!-- Messages viewport (scrolls); input overlays -->
-        <div class="chat-messages" style="position:absolute;inset:0;overflow-y:auto;padding:16px;padding-bottom:calc(16px + var(--chat-input-height));">
-            <div id="chatContainer"></div>
+    <div class="chat-main">
+        <div class="chat-main-header">
+            <h3>Chat Assistant</h3>
+        </div>
+        <!-- Messages viewport (scrolls) -->
+        <div class="chat-messages">
+            <div id="chatContainer" class="chat-container"></div>
         </div>
 
-        <!-- Input docked at bottom; overlays messages and never scrolls away -->
-        <div class="chat-input" style="position:absolute;left:0;right:0;bottom:0;height:var(--chat-input-height);background-color:var(--mud-palette-surface);border-top:1px solid var(--mud-palette-lines-default);box-shadow:0 -2px 6px rgba(0,0,0,0.06);z-index:2;">
-            <div class="chat-input-inner" style="display:flex;align-items:center;gap:8px;height:100%;padding:12px 16px;">
-                <MudTextField T="string"
-                              Id="messageInput"
-                              Placeholder="Type your message..."
-                              Variant="Variant.Outlined"
-                              FullWidth="true" />
-                <MudButton Id="sendButton"
-                           Variant="Variant.Filled"
-                           Color="Color.Primary">
+        <!-- Input docked at bottom -->
+        <div class="chat-input">
+            <div class="chat-input-inner">
+                <input type="text"
+                       id="messageInput"
+                       class="chat-input-field"
+                       placeholder="Type your message..." />
+                <button id="sendButton" class="chat-send-button">
                     Send
-                </MudButton>
+                </button>
             </div>
         </div>
-    </MudPaper>
+    </div>
 
-    <!-- Right Sidebar (fixed width, never wraps under) -->
-    <MudPaper Elevation="0" Class="chat-sidebar" style="flex:0 0 320px;width:320px;background-color:var(--mud-palette-surface);border-left:1px solid var(--mud-palette-lines-default);display:flex;flex-direction:column;min-height:0;">
-        <MudPaper Elevation="0" Class="chat-sidebar-header" style="padding:16px;border-bottom:1px solid var(--mud-palette-lines-default);">
-            <MudText Typo="Typo.h6">Actions</MudText>
-        </MudPaper>
-        <div id="actionsList" class="chat-actions" style="flex:1 1 auto;overflow-y:auto;padding:16px;min-height:0;"></div>
-    </MudPaper>
+    <!-- Right Sidebar -->
+    <div class="chat-sidebar">
+        <div class="chat-sidebar-header">
+            <h3>Actions</h3>
+        </div>
+        <div id="actionsList" class="chat-actions"></div>
+    </div>
 </div>
 
 @code {
