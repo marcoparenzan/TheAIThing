@@ -1,0 +1,109 @@
+@page "/login"
+@inject HttpClient Http
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<h3>Login (Local OpenID Simulator)</h3>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="alert alert-danger">@Error</div>
+}
+
+<EditForm Model="@Model" OnValidSubmit="@LoginAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mb-3">
+        <label class="form-label">Username</label>
+        <InputText @bind-Value="Model.Username" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <InputText @bind-Value="Model.Password" Type="password" class="form-control" />
+    </div>
+    <button class="btn btn-primary" type="submit">Sign in</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(AccessToken))
+{
+    <hr />
+    <p><strong>Access Token (truncated):</strong></p>
+    <code>@(AccessToken.Length > 120 ? AccessToken[..120] + "..." : AccessToken)</code>
+
+    <div class="mt-3">
+        <button class="btn btn-secondary" @onclick="CallUserInfo">Call /userinfo</button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(UserInfoJson))
+    {
+        <pre>@UserInfoJson</pre>
+    }
+}
+
+@code {
+    private readonly LoginModel Model = new() { Username = "admin", Password = "password" };
+    private string? AccessToken;
+    private string? Error;
+    private string? UserInfoJson;
+
+    private async Task LoginAsync()
+    {
+        Error = null;
+        UserInfoJson = null;
+        try
+        {
+            var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["grant_type"] = "password",
+                ["username"] = Model.Username,
+                ["password"] = Model.Password,
+                ["scope"] = "openid profile email api"
+            });
+
+            var res = await Http.PostAsync("/connect/token", content);
+            if (!res.IsSuccessStatusCode)
+            {
+                Error = $"Login failed: {(int)res.StatusCode} {res.ReasonPhrase}";
+                return;
+            }
+
+            using var doc = System.Text.Json.JsonDocument.Parse(await res.Content.ReadAsStringAsync());
+            AccessToken = doc.RootElement.GetProperty("access_token").GetString();
+
+            // Store in localStorage for later use
+            if (!string.IsNullOrEmpty(AccessToken))
+            {
+                await JS.InvokeVoidAsync("localStorage.setItem", "access_token", AccessToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+
+    private async Task CallUserInfo()
+    {
+        if (string.IsNullOrEmpty(AccessToken))
+        {
+            Error = "No access token.";
+            return;
+        }
+
+        var req = new HttpRequestMessage(HttpMethod.Get, "/userinfo");
+        req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", AccessToken);
+        var res = await Http.SendAsync(req);
+        if (!res.IsSuccessStatusCode)
+        {
+            UserInfoJson = $"Failed: {(int)res.StatusCode} {res.ReasonPhrase}";
+            return;
+        }
+
+        UserInfoJson = await res.Content.ReadAsStringAsync();
+    }
+
+    private sealed class LoginModel
+    {
+        public string Username { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+}

@@ -1,6 +1,6 @@
-export function setup(powerBiEmbeddingId, proxy, canv, staticPath) {
+export function setup(moduleId, proxy, canv, staticPath) {
     window.powerBiEmbeddingLib = window.powerBiEmbeddingLib || {};
-    var that = window.powerBiEmbeddingLib[powerBiEmbeddingId] || {};
+    var that = window.powerBiEmbeddingLib[moduleId] || {};
 
     that.proxy = proxy;
     that.canvas = canv;
@@ -8,7 +8,7 @@ export function setup(powerBiEmbeddingId, proxy, canv, staticPath) {
 
     that.powerBiEmbedding = new PowerBIEmbedding(window.document, that.proxy, that.canvas);
 
-    window.powerBiEmbeddingLib[powerBiEmbeddingId] = that;
+    window.powerBiEmbeddingLib[moduleId] = that;
 }
 
 export function showReport(powerBiEmbeddingId, accessToken, embedUrl, embedReportId) {

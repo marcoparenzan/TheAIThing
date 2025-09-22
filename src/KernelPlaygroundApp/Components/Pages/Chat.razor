@@ -1,0 +1,23 @@
+﻿@page "/chat"
+@attribute [Authorize]
+@inject ITenantConfig tenantConfig
+
+<PageTitle>Chat</PageTitle>
+
+<TheChat AfterRender="OnAfterRender" @ref="ctrl"></TheChat>
+
+@code {
+    TheChat ctrl;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnAfterRender()
+    {
+    }
+}

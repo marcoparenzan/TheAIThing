@@ -80,11 +80,14 @@ builder.Services.AddKeyedTransient("MyKernel", (Func<IServiceProvider, object?, 
 
     list.Add(k.CreateFunctionFromMethod(datasetService.GetModelSchema, nameof(datasetService.GetModelSchema), "Elenco delle tabelle nello schema del report"));
     list.Add(k.CreateFunctionFromMethod(datasetService.ExecuteDaxRows, nameof(datasetService.ExecuteDaxRows), "Esecuzione del codice dax"));
+    list.Add(k.CreateFunctionFromMethod(FileCsv, nameof(FileCsv), "Quando vuoi salvare un contenuto csv, bnasta specificare il nome"));
 
 
     var kp = k.ImportPluginFromFunctions("Automazione", "Tutte le funzioni di automazione", list);
     return k;
 }));
+
+void FileCsv(string name, string content) => File.WriteAllText(name, content);
 
 using IHost host = builder.Build();
 await host.RunAsync();

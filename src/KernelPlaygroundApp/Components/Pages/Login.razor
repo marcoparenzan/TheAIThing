@@ -1,0 +1,188 @@
+@page "/login"
+@layout Layout.MainLayout
+@using System.ComponentModel.DataAnnotations
+@using MudBlazor
+@inject HttpClient Http
+@inject Microsoft.JSInterop.IJSRuntime JS
+@inject NavigationManager Nav
+
+@code {
+    [SupplyParameterFromQuery] public string? authorize { get; set; }
+    [SupplyParameterFromQuery] public string? error { get; set; }
+
+    private readonly LoginModel Model = new() { Username = "admin", Password = "password" };
+    private string? AccessToken;
+    private string? Error;
+    private string? UserInfoJson;
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(error))
+            Error = error;
+    }
+
+    private async Task LoginAsync()
+    {
+        Error = null;
+        UserInfoJson = null;
+        try
+        {
+            var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["grant_type"] = "password",
+                ["username"] = Model.Username,
+                ["password"] = Model.Password,
+                ["scope"] = "openid profile email api"
+            });
+
+            var res = await Http.PostAsync("/connect/token", content);
+            if (!res.IsSuccessStatusCode)
+            {
+                Error = $"Login failed: {(int)res.StatusCode} {res.ReasonPhrase}";
+                return;
+            }
+
+            using var doc = System.Text.Json.JsonDocument.Parse(await res.Content.ReadAsStringAsync());
+            AccessToken = doc.RootElement.GetProperty("access_token").GetString();
+
+            if (!string.IsNullOrEmpty(AccessToken))
+            {
+                await JS.InvokeVoidAsync("localStorage.setItem", "access_token", AccessToken);
+                Nav.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+
+    private async Task CallUserInfo()
+    {
+        if (string.IsNullOrEmpty(AccessToken))
+        {
+            Error = "No access token.";
+            return;
+        }
+
+        var req = new HttpRequestMessage(HttpMethod.Get, "/userinfo");
+        req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", AccessToken);
+        var res = await Http.SendAsync(req);
+        UserInfoJson = res.IsSuccessStatusCode
+            ? await res.Content.ReadAsStringAsync()
+            : $"Failed: {(int)res.StatusCode} {res.ReasonPhrase}";
+    }
+
+    private sealed class LoginModel
+    {
+        [Required] public string Username { get; set; } = "";
+        [Required] public string Password { get; set; } = "";
+    }
+}
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center">
+    <MudPaper Elevation="2" Class="pa-6 mt-6" Style="width:100%;max-width:480px;">
+        <MudText Typo="Typo.h5" Class="mb-2">Sign in</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+            Use your credentials to access the app.
+        </MudText>
+
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">@Error</MudAlert>
+        }
+
+        @if (!string.IsNullOrEmpty(authorize))
+        {
+            @* OIDC authorize mode: real browser POST (no EditForm to avoid Blazor preventing submit).
+               We render MudTextField for look & feel AND hidden inputs with proper 'name' so the OP receives fields. *@
+            <form method="post" action="@authorize">
+                <MudStack Spacing="2">
+                    <MudTextField T="string"
+                                  Label="Username"
+                                  @bind-Value="Model.Username"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Person"
+                                  FullWidth="true"
+                                  Required="true" />
+                    <input type="hidden" name="username" value="@Model.Username" />
+
+                    <MudTextField T="string"
+                                  Label="Password"
+                                  @bind-Value="Model.Password"
+                                  Variant="Variant.Outlined"
+                                  InputType="InputType.Password"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Lock"
+                                  FullWidth="true"
+                                  Required="true" />
+                    <input type="hidden" name="password" value="@Model.Password" />
+
+                    <MudButton Color="Color.Primary"
+                               Variant="Variant.Filled"
+                               ButtonType="ButtonType.Submit"
+                               FullWidth="true">
+                        Sign in
+                    </MudButton>
+                </MudStack>
+            </form>
+        }
+        else
+        {
+            @* Local/dev login (password grant) handled by C# *@
+            <EditForm Model="@Model" OnValidSubmit="@LoginAsync">
+                <DataAnnotationsValidator />
+                <MudStack Spacing="2">
+                    <MudTextField T="string"
+                                  Label="Username"
+                                  For="@(() => Model.Username)"
+                                  @bind-Value="Model.Username"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Person"
+                                  FullWidth="true"
+                                  Required="true" />
+                    <MudTextField T="string"
+                                  Label="Password"
+                                  For="@(() => Model.Password)"
+                                  @bind-Value="Model.Password"
+                                  Variant="Variant.Outlined"
+                                  InputType="InputType.Password"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Lock"
+                                  FullWidth="true"
+                                  Required="true" />
+                    <MudButton Color="Color.Primary"
+                               Variant="Variant.Filled"
+                               ButtonType="ButtonType.Submit"
+                               FullWidth="true">
+                        Sign in
+                    </MudButton>
+                </MudStack>
+            </EditForm>
+
+            @if (!string.IsNullOrEmpty(AccessToken))
+            {
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.subtitle2">Access Token (truncated):</MudText>
+                <MudCodeHighlight Language="mudtext" Class="mt-1">
+                    @(AccessToken.Length > 120 ? AccessToken[..120] + "..." : AccessToken)
+                </MudCodeHighlight>
+
+                <MudStack Direction="Row" Spacing="1" Class="mt-3">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="CallUserInfo">
+                        Call /userinfo
+                    </MudButton>
+                </MudStack>
+
+                @if (!string.IsNullOrEmpty(UserInfoJson))
+                {
+                    <MudPaper Class="mt-3 p-2">
+                        <pre class="mb-0">@UserInfoJson</pre>
+                    </MudPaper>
+                }
+            }
+        }
+    </MudPaper>
+</MudContainer>
