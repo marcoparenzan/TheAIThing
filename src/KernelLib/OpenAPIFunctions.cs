@@ -2,9 +2,9 @@
 using Microsoft.OpenApi.Models.Interfaces;
 using ToolsLib;
 
-namespace KernelWithContext;
+namespace KernelLib;
 
-public class Functions(HttpHandler httpHandler, string url, string pathKey, IOpenApiPathItem pathItem, OperationType operationType, OpenApiOperation operationInfo)
+public class OpenAPIFunctions(HttpHandler httpHandler, string url, string pathKey, IOpenApiPathItem pathItem, OperationType operationType, OpenApiOperation operationInfo)
 {
     public async Task<object> ExecuteAsync(string? what)
     {

@@ -1,76 +1,46 @@
-export function setup(moduleId, proxy, canv, staticPath) {
-    window.powerBiEmbeddingLib = window.powerBiEmbeddingLib || {};
-    const that = window.powerBiEmbeddingLib[moduleId] || {};
+let dotNetHelper = null;
 
-    that.proxy = proxy;
+export function setup(moduleId, canv, staticPath, dotNetRef) {
+    
+    window.chatLib = window.chatLib || {};
+    const that = window.chatLib[moduleId] || {};
+
     that.canvas = canv;
     that.staticPath = staticPath;
+    that.dotNetHelper = dotNetRef;
 
-    that.component = new Chat(window.document, that.proxy, that.canvas);
+    that.component = new Chat(moduleId, window.document, that.dotNetRef, that.canvas);
 
-    window.powerBiEmbeddingLib[moduleId] = that;
+    window.chatLib[moduleId] = that;
 }
 
-export function start(moduleId) {
-    window.powerBiEmbeddingLib = window.powerBiEmbeddingLib || {};
-    const that = window.powerBiEmbeddingLib[moduleId];
-    if (!that || !that.component) return;
+export function addMessage(moduleId, content, sender) {
+    window.chatLib = window.chatLib || {};
+    const that = window.chatLib[moduleId] || {};
+    that.component?.addMessage(content, sender);
+    window.chatLib[moduleId] = that;
 }
 
-export function set(moduleId, name, value) {
-    window.powerBiEmbeddingLib = window.powerBiEmbeddingLib || {};
-    const that = window.powerBiEmbeddingLib[moduleId];
-    if (!that) return;
-    that[name] = value;
-}
-
-export function showReport(powerBiEmbeddingId, accessToken, embedUrl, embedReportId) {
-    window.powerBiEmbeddingLib = window.powerBiEmbeddingLib || {};
-    const that = window.powerBiEmbeddingLib[powerBiEmbeddingId] || {};
-    that.component?.showReport(accessToken, embedUrl, embedReportId);
-    window.powerBiEmbeddingLib[powerBiEmbeddingId] = that;
+// Example of calling the C# method from JavaScript
+export function sendMessageToCSharp(moduleId, message) {
+    window.chatLib = window.chatLib || {};
+    const that = window.chatLib[moduleId];
+    if (that.dotNetHelper) {
+        that.dotNetHelper.invokeMethodAsync('OnMessageReceived', message);
+    }
 }
 
 class Chat {
-    constructor(doc, proxy, canv) {
+    constructor(moduleId, doc, proxy, canv) {
+        this.moduleId = moduleId;
         this.doc = doc;
         this.proxy = proxy;
         this.canv = canv;
 
-        this.interface = new ChatInterface(
-            this.doc.getElementById('chatContainer'),
-            this.doc.getElementById('messageInput'),
-            this.doc.getElementById('sendButton'),
-            this.doc.getElementById('actionsList')
-        );
-    }
-
-    showReport(accessToken, embedUrl, embedReportId) {
-        const models = window['powerbi-client']?.models;
-        if (!models) return;
-
-        const config = {
-            type: 'report',
-            tokenType: models.TokenType.Embed,
-            accessToken: accessToken,
-            embedUrl: embedUrl,
-            id: embedReportId,
-            permissions: models.Permissions.All,
-            settings: {
-                filterPaneEnabled: true,
-                navContentPaneEnabled: true
-            }
-        };
-        window.powerbi.embed(this.canv, config);
-    }
-}
-
-class ChatInterface {
-    constructor(chatContainer, messageInput, sendButton, actionsList) {
-        this.chatContainer = chatContainer;
-        this.messageInput = messageInput;
-        this.sendButton = sendButton;
-        this.actionsList = actionsList;
+        this.chatContainer = this.doc.getElementById('chatContainer'),
+        this.messageInput = this.doc.getElementById('messageInput'),
+        this.sendButton = this.doc.getElementById('sendButton'),
+        this.actionsList = this.doc.getElementById('actionsList')
         this.messageCounter = 0;
 
         this.initEventListeners();
@@ -94,10 +64,13 @@ class ChatInterface {
         this.messageInput.value = '';
         this.messageInput.focus();
 
-        setTimeout(() => {
-            this.addMessage('This is a simulated AI response to your message.', 'ai');
-            this.addAction(`Download Response ${++this.messageCounter}`, 'download');
-        }, 500);
+        // Send message to C# method
+        sendMessageToCSharp(this.moduleId, message);
+
+        //setTimeout(() => {
+        //    this.addMessage('This is a simulated AI response to your message.', 'ai');
+        //    this.addAction(`Download Response ${++this.messageCounter}`, 'download');
+        //}, 500);
     }
 
     addMessage(content, sender) {

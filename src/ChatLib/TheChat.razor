@@ -278,18 +278,23 @@
     [Parameter] public EventCallback AfterRender { get; set; }
 
     private ElementReference el;
-    private DotNetObjectReference<TheChat>? proxy;
+
+    public void Handle(Action<string> action)
+    {
+        interop.Handle(action);
+    }
+
+    public async Task AddMessageAsync(string content, string sender)
+    {
+        await interop.AddMessageAsync(content, sender);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            proxy = DotNetObjectReference.Create(this);
-            await interop.SetupAsync("abc", proxy, el, "");
+            await interop.SetupAsync("mychat", el, "");
             await AfterRender.InvokeAsync();
         }
     }
-
-    public async Task ShowReportAsync(string accessToken, string embedUrl, string embedReportId)
-        => await interop.ShowReportAsync("abc", accessToken, embedUrl, embedReportId);
 }

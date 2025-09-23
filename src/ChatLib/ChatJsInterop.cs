@@ -7,6 +7,7 @@ public sealed class ChatJsInterop : IAsyncDisposable
 {
     private readonly Lazy<Task<IJSObjectReference>> _moduleTask;
     private string? _moduleId;
+    private DotNetObjectReference<ChatJsInterop>? dotNetRef;
 
     private string StaticPath => $"./_content/{nameof(ChatLib)}/";
 
@@ -18,44 +19,41 @@ public sealed class ChatJsInterop : IAsyncDisposable
         ).AsTask());
     }
 
-    public async Task SetupAsync(string moduleId, object objRef, ElementReference canv, string? staticPath = null)
+    Action<string> action;
+
+    public void Handle(Action<string> action)
+    {
+        this.action = action;
+    }
+
+    [JSInvokable]
+    public void OnMessageReceived(string message)
+    {
+        this.action?.Invoke(message);
+    }
+
+    public async Task AddMessageAsync(string content, string sender)
+    {
+        EnsureSetup();
+        var module = await GetModuleAsync();
+        await module.InvokeVoidAsync("addMessage", _moduleId, content, sender);
+    }
+
+    public async Task SetupAsync(string moduleId, ElementReference canv, string? staticPath = null)
     {
         var module = await GetModuleAsync();
         _moduleId = moduleId;
-        await module.InvokeVoidAsync("setup", moduleId, objRef, canv, staticPath ?? StaticPath);
-    }
-
-    public async Task StartAsync()
-    {
-        EnsureSetup();
-        var module = await GetModuleAsync();
-        await module.InvokeVoidAsync("start", _moduleId);
-    }
-
-    // Convenience overload using the module id set in SetupAsync
-    public async Task ShowReportAsync(string accessToken, string embedUrl, string embedReportId)
-    {
-        EnsureSetup();
-        var module = await GetModuleAsync();
-        await module.InvokeVoidAsync("showReport", _moduleId, accessToken, embedUrl, embedReportId);
-    }
-
-    // Existing signature retained (explicit module id)
-    public async Task ShowReportAsync(string moduleId, string accessToken, string embedUrl, string embedReportId)
-    {
-        var module = await GetModuleAsync();
-        await module.InvokeVoidAsync("showReport", moduleId, accessToken, embedUrl, embedReportId);
-    }
-
-    public async Task SetAsync<TValue>(string name, TValue value)
-    {
-        EnsureSetup();
-        var module = await GetModuleAsync();
-        await module.InvokeVoidAsync("set", _moduleId, name, value);
+        
+        // Create a reference to this instance for JavaScript callbacks
+        dotNetRef = DotNetObjectReference.Create(this);
+        
+        await module.InvokeVoidAsync("setup", moduleId, canv, staticPath ?? StaticPath, dotNetRef);
     }
 
     public async ValueTask DisposeAsync()
     {
+        dotNetRef?.Dispose();
+        
         if (_moduleTask.IsValueCreated)
         {
             var module = await _moduleTask.Value;

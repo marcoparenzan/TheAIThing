@@ -1,6 +1,6 @@
 ﻿using ToolsLib;
 
-namespace KernelPlayground;
+namespace KernelLib;
 
 public class Functions(HttpHandler httpHandler)
 {

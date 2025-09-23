@@ -5,9 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
-namespace AIAppLib;
-
-public sealed class Worker([FromKeyedServices("MyKernel")] Kernel kernel) : BackgroundService
+public sealed class ConsoleWorker([FromKeyedServices("MyKernel")] Kernel kernel) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

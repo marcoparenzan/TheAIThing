@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>preview</LangVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\AIAppLib\AIAppLib.csproj" />
+		<ProjectReference Include="..\AnalysisServicesLib\AnalysisServicesLib.csproj" />
+		<ProjectReference Include="..\FabricLib\FabricLib.csproj" />
+		<ProjectReference Include="..\PowerBIEmbeddingLib\PowerBIEmbeddingLib.csproj" />
+		<ProjectReference Include="..\ToolsLib\ToolsLib.csproj" />
+		<ProjectReference Include="..\OpenAPILib\OpenAPILib.csproj" />
+
+	</ItemGroup>
+</Project>

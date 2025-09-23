@@ -1,4 +1,6 @@
 ﻿@page "/chat"
+@using Microsoft.SemanticKernel
+@using Microsoft.SemanticKernel.ChatCompletion
 @attribute [Authorize]
 @inject ITenantConfig tenantConfig
 
@@ -9,10 +11,57 @@
 @code {
     TheChat ctrl;
 
+    [Inject(Key ="MyKernel")]
+    public Kernel MyKernel { get; set; }
+
+    IChatCompletionService chatCompletionService;
+
+    ChatHistory history;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            // Get chat completion service
+            chatCompletionService = MyKernel.GetRequiredService<IChatCompletionService>();
+
+            // Enable auto function calling
+            PromptExecutionSettings promptExecutionSettings = new()
+            {
+                FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
+            };
+
+            history = new ChatHistory();
+
+            ctrl.Handle(async input =>
+            {
+                history.AddMessage(AuthorRole.User, input);
+
+                ChatMessageContent chatResult = await chatCompletionService.GetChatMessageContentAsync(history, promptExecutionSettings, MyKernel, CancellationToken.None);
+
+                history.Add(chatResult);
+
+                await ctrl.AddMessageAsync($"{chatResult}", "AI");
+            });
+
+            // string? input = null;
+            // while ((input = Console.ReadLine()) is not null)
+            // {
+            //     try
+            //     {
+            //         Console.WriteLine();
+
+
+            //         history.Add(chatResult);
+
+            //         Console.Write($"\n>>> Result2: {chatResult}\n\n> ");
+            //     }
+            //     catch (Exception ex)
+            //     {
+            //         Console.WriteLine($"\n>>> Exception: {ex.Message}\n\n> ");
+            //     }
+            // }
+
             StateHasChanged();
         }
     }

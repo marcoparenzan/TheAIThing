@@ -29,6 +29,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\ChatLib\ChatLib.csproj" />
+		<ProjectReference Include="..\KernelLib\KernelLib.csproj" />
 		<ProjectReference Include="..\OpenIdConnectLib\OpenIdConnectLib.csproj" />
 		<ProjectReference Include="..\PowerBIEmbeddingLib\PowerBIEmbeddingLib.csproj" />
 		<ProjectReference Include="..\FabricLib\FabricLib.csproj" />
