@@ -29,7 +29,7 @@ public static class PowerBIScenario
 
         var workspaceId = Guid.Parse(workspaceInfo.Id);
         var reportItems = app.PowerBiClient.Reports.GetReportsInGroup(workspaceId);
-        var selectedReportItem = reportItems.Value[0];
+        var selectedReportItem = reportItems.Value[1];
 
         var dataset = app.PowerBiClient.Datasets.GetDatasetInGroup(workspaceId, selectedReportItem.DatasetId);
 

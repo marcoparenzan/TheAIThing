@@ -79,7 +79,7 @@ class Chat {
 
         const bubble = document.createElement('div');
         bubble.className = `chat-bubble ${sender}`;
-        bubble.textContent = content;
+        bubble.innerHTML = content;
 
         row.appendChild(bubble);
         this.chatContainer.appendChild(row);

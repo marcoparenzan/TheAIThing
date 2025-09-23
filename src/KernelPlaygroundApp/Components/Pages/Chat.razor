@@ -36,12 +36,32 @@
             ctrl.Handle(async input =>
             {
                 history.AddMessage(AuthorRole.User, input);
+                var i = 1;
+                while (i<=3) 
+                {
+                    try
+                    {
+                        ChatMessageContent chatResult = await chatCompletionService.GetChatMessageContentAsync(history, promptExecutionSettings, MyKernel, CancellationToken.None);
 
-                ChatMessageContent chatResult = await chatCompletionService.GetChatMessageContentAsync(history, promptExecutionSettings, MyKernel, CancellationToken.None);
 
-                history.Add(chatResult);
+                        history.Add(chatResult);
 
-                await ctrl.AddMessageAsync($"{chatResult}", "AI");
+                        await ctrl.AddMessageAsync($"{chatResult}", "AI");
+
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        var msg = $"ERRORE nell'esecuzione {i}: {ex.Message}. Tienine conto per il nuovo tentativo";
+                        history.Add(new ChatMessageContent(AuthorRole.Assistant, msg));
+                        await ctrl.AddMessageAsync(msg, "AI");
+                    }
+                    i++;
+                }
+                if (i > 3)
+                {
+                    await ctrl.AddMessageAsync($"ERRORE: non sono riuscito a rispondere", "AI");
+                }
             });
 
             // string? input = null;
