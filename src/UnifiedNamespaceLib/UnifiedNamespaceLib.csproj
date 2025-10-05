@@ -22,7 +22,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\PowerFxLib\PowerFxLib.csproj" />
-	<ProjectReference Include="..\OpcUaLib\OpcUaLib.csproj" />
 	</ItemGroup>
 
 </Project>

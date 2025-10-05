@@ -21,6 +21,7 @@ public sealed class ConsoleWorker([FromKeyedServices("MyKernel")] Kernel kernel)
         Console.Write("> ");
 
         var history = new ChatHistory();
+        //history.AddSystemMessage("Sei un assistente esperto in automazione IoT e domotica. Rispondi sempre in modo professionale e tecnico. Rispondi sempre con snippet HTML.");
 
         string? input = null;
         while ((input = Console.ReadLine()) is not null)

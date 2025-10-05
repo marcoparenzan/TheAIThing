@@ -4,6 +4,7 @@ namespace KernelLib;
 
 public class Functions(HttpHandler httpHandler)
 {
+    ShellyProxy bedroomProxy = new("http://shelly1g4-7c2c676ea328");
     Dictionary<string, bool> statoCondizionamento = new();
 
     public string[] StanzeDiUnaCasa() =>
@@ -20,6 +21,10 @@ public class Functions(HttpHandler httpHandler)
 
     public bool CondizionatoreAcceso(string stanza)
     {
+        if (stanza == "bedroom")
+        {
+            return bedroomProxy.Stato();
+        }
         if (!statoCondizionamento.ContainsKey(stanza))
         {
             statoCondizionamento[stanza] = false; // Assume the door is open by default
@@ -29,6 +34,12 @@ public class Functions(HttpHandler httpHandler)
 
     public bool ToggleCondizionamento(string room)
     {
+        if (room == "bedroom")
+        {
+            var xxx = bedroomProxy.Toggle();
+            return xxx;
+        }
+
         var stato = CondizionatoreAcceso(room);
         statoCondizionamento[room] = !stato; // Toggle the state
         return !stato; // Return the new state

@@ -18,6 +18,7 @@ builder.Services.AddTransient<OpenApiContext>();
 builder.Services.AddKeyedTransient("MyKernel", (Func<IServiceProvider, object?, Kernel>)((sp, key) =>
 {
     return KernelLib.IoTScenario.Build(sp);
+    //return KernelLib.OpenAPIScenario.Build(sp);
 }));
 
 

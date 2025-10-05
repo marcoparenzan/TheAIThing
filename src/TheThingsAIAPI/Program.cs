@@ -8,7 +8,7 @@ using TheAIThingAPI.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IRetainedMessageService, UnifiedNamespaceLib.Services.InMemoryRetainedMessageService>("retain0");
-builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.OpcUAService>("opcua1");
+//builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.OpcUAService>("opcua1");
 builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.MqttBrokerService>("mqttbroker");
 builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.TimerServices>("timers");
 builder.Services.AddKeyedSingleton<UnifiedNamespaceLib.Services.IWorkerService, UnifiedNamespaceLib.Services.Workers.TimeSeriesService>("timeseries");
